@@ -1,0 +1,331 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>どっちぼーい</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #f8f9fa;
+            --node-bg: white;
+            --node-border: #dee2e6;
+            --text-color: #212529;
+            --id-color: #adb5bd;
+            --yes-color-strong: #28a745;
+            --no-color-strong: #dc3545;
+            --yes-color-faint: #a3d9a5; /* 薄い緑 */
+            --no-color-faint: #f5c6cb;  /* 薄い赤 */
+            --active-glow: #007bff;
+            --answered-bg: #e9ecef;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            font-family: 'Noto Sans JP', sans-serif;
+            font-size: 1em;
+            font-weight: 700;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        #reload-btn {
+            background: linear-gradient(145deg, #3b82f6, #60a5fa);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+        #reset-route-btn {
+            background: linear-gradient(145deg, #6c757d, #adb5bd);
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .chart-wrapper {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            grid-template-rows: repeat(6, minmax(120px, auto));
+            gap: 0 20px;
+            width: 1400px;
+            position: relative;
+            margin-top: 60px;
+        }
+
+        .tier-label {
+            grid-column: 1; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; padding: 10px;
+        }
+        .tier-label.tier-3 { grid-row: 3; } .tier-label.tier-4 { grid-row: 4; } .tier-label.tier-5 { grid-row: 5; }
+        .tier-name { font-size: 1.1em; font-weight: 700; color: #4b5563; }
+        .tier-subname { font-size: 0.8em; color: #9ca3af; }
+        .tier-multiplier { font-size: 1.8em; font-weight: 700; color: #2563eb; margin-top: 5px; }
+
+        .level {
+            grid-column: 2; display: flex; justify-content: space-around; align-items: center;
+        }
+        .level#level-0 { grid-row: 1; } .level#level-1 { grid-row: 2; } .level#level-2 { grid-row: 3; }
+        .level#level-3 { grid-row: 4; } .level#level-4 { grid-row: 5; } .level#level-5 { grid-row: 6; }
+
+        .node {
+            background-color: var(--node-bg); border: 1px solid var(--node-border);
+            border-radius: 12px; padding: 10px; width: 180px; height: 70px;
+            display: flex; justify-content: center; align-items: center; text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); position: relative;
+            z-index: 10; font-size: 0.95em; transition: all 0.2s;
+        }
+        .node-id {
+            position: absolute;
+            top: 6px;
+            left: 10px;
+            font-size: 0.8em;
+            font-weight: 700;
+            color: var(--id-color);
+        }
+        .node.clickable { cursor: pointer; }
+        .node.active {
+            box-shadow: 0 0 15px 5px var(--active-glow);
+            border-color: var(--active-glow);
+            transform: scale(1.05);
+        }
+        .node.answered { background-color: var(--answered-bg); color: #6c757d; }
+        .node.answered .node-id { color: #9ca3af; }
+
+        .goal-node {
+            width: 90px; height: 80px; flex-direction: column; background-color: #fffbeb;
+            border-color: #fde68a;
+        }
+        .goal-node .multiplier { font-size: 1.6em; font-weight: 700; color: #d97706; }
+        .goal-node .label { font-size: 0.8em; color: #b45309; margin-top: 4px; }
+        .goal-node.final-goal {
+            box-shadow: 0 0 20px 8px #ffc107;
+            border-color: #ffc107;
+            transform: scale(1.1);
+        }
+
+        .chart-svg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; pointer-events: none;
+        }
+        .line {
+            stroke-width: 2;
+            fill: none;
+            transition: all 0.3s ease-in-out;
+        }
+        .line-yes { stroke: var(--yes-color-faint); }
+        .line-no { stroke: var(--no-color-faint); }
+
+        .line.highlight-yes {
+            stroke: var(--yes-color-strong);
+            stroke-width: 5;
+        }
+        .line.highlight-no {
+            stroke: var(--no-color-strong);
+            stroke-width: 5;
+        }
+        
+        /* Modal */
+        #modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 2000;
+            display: none; justify-content: center; align-items: center;
+        }
+        #modal-content {
+            background: white; padding: 30px 40px; border-radius: 15px;
+            display: flex; gap: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .modal-btn {
+            font-size: 1.5em; padding: 15px 40px; border-radius: 10px;
+        }
+        #modal-yes { background-color: var(--yes-color-strong); }
+        #modal-no { background-color: var(--no-color-strong); }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button id="reload-btn" class="btn">新しいチャート</button>
+        <button id="reset-route-btn" class="btn">ルートをリセット</button>
+    </div>
+
+    <div id="modal-overlay">
+        <div id="modal-content">
+            <button id="modal-no" class="btn modal-btn">いいえ</button>
+            <button id="modal-yes" class="btn modal-btn">はい</button>
+        </div>
+    </div>
+
+    <div class="chart-wrapper">
+        <!-- Tier Labels -->
+        <div class="tier-label tier-3"><div class="tier-name">知人の段</div><div class="tier-subname">ACQUAINTANCE</div><div class="tier-multiplier">x2</div></div>
+        <div class="tier-label tier-4"><div class="tier-name">友達の段</div><div class="tier-subname">FRIEND</div><div class="tier-multiplier">x3</div></div>
+        <div class="tier-label tier-5"><div class="tier-name">親友の段</div><div class="tier-subname">BEST FRIEND</div><div class="tier-multiplier">x4</div></div>
+
+        <!-- SVG Lines with IDs and default color classes -->
+        <svg class="chart-svg" viewbox="0 0 1400 780" preserveAspectRatio="xMidYMid meet">
+            <g>
+                <path id="line-0-0-no" class="line line-no" d="M 775 55 L 575 165"/><path id="line-0-0-yes" class="line line-yes" d="M 775 55 L 975 165"/>
+                <path id="line-1-0-no" class="line line-no" d="M 575 225 L 425 305"/><path id="line-1-0-yes" class="line line-yes" d="M 575 225 L 775 305"/>
+                <path id="line-1-1-no" class="line line-no" d="M 975 225 L 775 305"/><path id="line-1-1-yes" class="line line-yes" d="M 975 225 L 1125 305"/>
+                <path id="line-2-0-no" class="line line-no" d="M 425 365 L 325 425"/><path id="line-2-0-yes" class="line line-yes" d="M 425 365 L 625 425"/>
+                <path id="line-2-1-no" class="line line-no" d="M 775 365 L 625 425"/><path id="line-2-1-yes" class="line line-yes" d="M 775 365 L 925 425"/>
+                <path id="line-2-2-no" class="line line-no" d="M 1125 365 L 925 425"/><path id="line-2-2-yes" class="line line-yes" d="M 1125 365 L 1225 425"/>
+                <path id="line-3-0-no" class="line line-no" d="M 325 485 L 275 545"/><path id="line-3-0-yes" class="line line-yes" d="M 325 485 L 475 545"/>
+                <path id="line-3-1-no" class="line line-no" d="M 625 485 L 475 545"/><path id="line-3-1-yes" class="line line-yes" d="M 625 485 L 725 545"/>
+                <path id="line-3-2-no" class="line line-no" d="M 925 485 L 825 545"/><path id="line-3-2-yes" class="line line-yes" d="M 925 485 L 1075 545"/>
+                <path id="line-3-3-no" class="line line-no" d="M 1225 485 L 1075 545"/><path id="line-3-3-yes" class="line line-yes" d="M 1225 485 L 1275 545"/>
+                <path id="line-4-0-no" class="line line-no" d="M 275 605 L 235 685"/><path id="line-4-0-yes" class="line line-yes" d="M 275 605 L 345 685"/>
+                <path id="line-4-1-no" class="line line-no" d="M 475 605 L 455 685"/><path id="line-4-1-yes" class="line line-yes" d="M 475 605 L 565 685"/>
+                <path id="line-4-2-no" class="line line-no" d="M 725 605 L 675 685"/><path id="line-4-2-yes" class="line line-yes" d="M 725 605 L 785 685"/>
+                <path id="line-4-3-no" class="line line-no" d="M 825 605 L 765 685"/><path id="line-4-3-yes" class="line line-yes" d="M 825 605 L 875 685"/>
+                <path id="line-4-4-no" class="line line-no" d="M 1075 605 L 985 685"/><path id="line-4-4-yes" class="line line-yes" d="M 1075 605 L 1095 685"/>
+                <path id="line-4-5-no" class="line line-no" d="M 1275 605 L 1205 685"/><path id="line-4-5-yes" class="line line-yes" d="M 1275 605 L 1315 685"/>
+            </g>
+        </svg>
+
+        <!-- Question nodes with IDs -->
+        <div class="level" id="level-0"><div id="node-0-0" class="node"></div></div>
+        <div class="level" id="level-1"><div id="node-1-0" class="node"></div><div id="node-1-1" class="node"></div></div>
+        <div class="level" id="level-2"><div id="node-2-0" class="node"></div><div id="node-2-1" class="node"></div><div id="node-2-2" class="node"></div></div>
+        <div class="level" id="level-3"><div id="node-3-0" class="node"></div><div id="node-3-1" class="node"></div><div id="node-3-2" class="node"></div><div id="node-3-3" class="node"></div></div>
+        <div class="level" id="level-4"><div id="node-4-0" class="node"></div><div id="node-4-1" class="node"></div><div id="node-4-2" class="node"></div><div id="node-4-3" class="node"></div><div id="node-4-4" class="node"></div></div>
+
+        <!-- Goal Level with IDs -->
+        <div class="level" id="level-5">
+            <div id="goal-0" class="node goal-node"><span class="multiplier">x16</span><span class="label">SOULMATE</span></div>
+            <div id="goal-1" class="node goal-node"><span class="multiplier">x16</span><span class="label">SOULMATE</span></div>
+            <div id="goal-2" class="node goal-node"><span class="multiplier">x12</span><span class="label">SOULMATE</span></div>
+            <div id="goal-3" class="node goal-node"><span class="multiplier">x12</span><span class="label">SOULMATE</span></div>
+            <div id="goal-4" class="node goal-node"><span class="multiplier">x8</span><span class="label">SOULMATE</span></div>
+            <div id="goal-5" class="node goal-node"><span class="multiplier">x8</span><span class="label">SOULMATE</span></div>
+            <div id="goal-6" class="node goal-node"><span class="multiplier">x12</span><span class="label">SOULMATE</span></div>
+            <div id="goal-7" class="node goal-node"><span class="multiplier">x12</span><span class="label">SOULMATE</span></div>
+            <div id="goal-8" class="node goal-node"><span class="multiplier">x16</span><span class="label">SOULMATE</span></div>
+            <div id="goal-9" class="node goal-node"><span class="multiplier">x16</span><span class="label">SOULMATE</span></div>
+        </div>
+    </div>
+
+    <script>
+        const allQuestions = ["一目惚れをしたことがある", "恋愛では駆け引きが必要だと思う", "好きな人の過去の恋愛は、すべて知りたい", "友人関係から恋愛に発展することは、ない", "恋人とは、金銭感覚が合わないと無理だ", "サプライズでプレゼントをされるのが好きだ", "恋人とお揃いのものを持つことに憧れる", "ケンカをしたら、自分から謝る方だ", "恋人にも、言えない秘密があっていい", "束縛されるのは、愛情表現だと感じる", "恋愛感情は、時間と共に薄れていくものだと思う", "記念日や誕生日は、盛大にお祝いしたい", "恋人ができたら、SNSで公表したい", "恋人の携帯電話を、こっそり見たことがある", "恋愛において、ユーモアのセンスはとても大事だ", "恋人とのデートプランは、自分で細かく立てたい", "復縁した経験がある", "恋愛が、生活の中で最も優先順位が高い", "相手の気を引くために、わざと嫉妬させることがある", "恋愛相談は、同性の友達にするのが一番だ", "恋人の服装や髪型は、自分の好みに変えてほしい", "恋人との将来を、付き合ってすぐに想像してしまう", "恋人のために、自分の趣味の時間を削ることができる", "「好き」という言葉は、軽々しく口にしたくない", "恋人の家族や友人とは、積極的に仲良くなりたい", "どんなに好きでも、結婚願悪のない相手とは付き合えない", "恋愛対象として、年齢はかなり気にする方だ", "恋人がいても、一人の時間は絶対に必要だ", "一度でも浮気をされたら、絶対に許せない", "恋人とは、お互いを高め合える関係が理想だ", "デートの支払いは、割り勘が当たり前だと思う", "恋人の影響で、自分の趣味や好みが変わったことがある", "連絡はマメな方より、たまにくるくらいが丁度いい", "恋人に自分の弱みを、すべて見せることができる", "恋愛に「安定」よりも「刺激」を求めてしまう", "別れた恋人とは、友達に戻れる", "相手の学歴や職業を、少し気にしてしまう", "恋人のSNSは、頻繁にチェックしてしまう", "尽くすよりも、尽くされたいタイプだ", "恋愛映画やドラマを見ると、自分の恋愛に影響されやすい", "恋人が落ち込んでいる時は、理由を聞かずにそばにいてあげたい", "友達だと思っていた相手を、急に異性として意識することがある", "恋愛のためなら、住む場所を変えることも厭わない", "パートナー選びでは、尊敬できるかどうかを最も重視する", "喧嘩の後は、すぐに話し合って解決したい", "恋人の前では、いつでも完璧な自分でいたい", "共通の趣味がない相手との恋愛は、考えられない", "恋愛において、第一印象はあまり当てにならないと思う", "恋人がいても、他の異性に魅力を感じることはある", "愛があれば、どんな困難も乗り越えられると信じている", "恋人が異性の投稿に「いいね」をするのは気になる", "今の恋人が、今までで一番好きだと言い切れる", "パートナー選びに、親の意見は影響する", "恋人には、自分の仕事の内容を詳しく話したい", "付き合ったら、すぐに同棲を考えたい", "言葉で愛情を伝えられるより、態度で示される方が嬉しい", "恋人には、常に身だしなみを整えていてほしい", "恋愛は、お互いの欠点を許し合うことだと思う", "ケンカは長引かせたくないので、納得いかなくても折れることがある", "友達との予定より、恋人との約束を優先する", "恋人とお互いのスマホのパスワードを共有したい", "お家デートよりも、外に出てアクティブに過ごしたい", "恋人というより、親友のような関係が理想だ", "過去の恋愛を振り返って、後悔することがよくある", "好きな人の前で、感情的になって泣いてしまうことがある", "周りから「お似合いだね」と言われると、とても嬉しい", "もし好きになった人に恋人がいても、諦めずにアピールする", "食べ物の好みが合わない人との恋愛は難しい", "プレゼントは、高価なものより心のこもった手作りのものが嬉しい", "付き合う前に、相手の結婚願望の有無を確認したい", "恋人には、健康的な生活を送ってほしいと強く思う", "恋人に頼るより、何でも自分で解決したい", "二人の間に問題が起きたら、まず友達に相談する", "一度ついた嘘は、どんなに謝られても許せない", "自分の理想の恋愛像を、相手に押し付けてしまうことがある", "電話で話すより、ビデオ通話で顔を見て話したい", "人は恋をすると、良い方向に変わるものだと思う", "別れるときは、相手に直接会って伝えたい", "恋人が昔の恋人の話をするのは、あまり良い気がしない", "「一生一緒にいよう」という言葉を信じている", "バレンタインに自分用にチョコを買ったことがある", "今までに異性にチョコを渡したことがある", "犬系が好きか", "年上派?", "恋人には頼られたいか", "“身長”は自分が相手に求める条件の3本の指以内に入るか", "内向的な人が好みか", "告白する（される）なら直接派かLINE派か", "デートはアウトドアか", "自分はホレやすい方だと思いますか？"];
+        const nodes = document.querySelectorAll('.chart-wrapper .node');
+        const questionNodes = document.querySelectorAll('.chart-wrapper .level:not(#level-5) .node');
+        const lines = document.querySelectorAll('.chart-svg .line');
+        
+        const reloadBtn = document.getElementById('reload-btn');
+        const resetRouteBtn = document.getElementById('reset-route-btn');
+        
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalYesBtn = document.getElementById('modal-yes');
+        const modalNoBtn = document.getElementById('modal-no');
+
+        let currentNodeId = null;
+        let gameActive = false;
+
+        const chartMap = {
+            'node-0-0': { no: 'node-1-0', yes: 'node-1-1' }, 'node-1-0': { no: 'node-2-0', yes: 'node-2-1' },
+            'node-1-1': { no: 'node-2-1', yes: 'node-2-2' }, 'node-2-0': { no: 'node-3-0', yes: 'node-3-1' },
+            'node-2-1': { no: 'node-3-1', yes: 'node-3-2' }, 'node-2-2': { no: 'node-3-2', yes: 'node-3-3' },
+            'node-3-0': { no: 'node-4-0', yes: 'node-4-1' }, 'node-3-1': { no: 'node-4-1', yes: 'node-4-2' },
+            'node-3-2': { no: 'node-4-2', yes: 'node-4-3' }, 'node-3-3': { no: 'node-4-3', yes: 'node-4-4' },
+            'node-4-0': { no: 'goal-0', yes: 'goal-1' }, 'node-4-1': { no: 'goal-2', yes: 'goal-3' },
+            'node-4-2': { no: 'goal-4', yes: 'goal-5' }, 'node-4-3': { no: 'goal-6', yes: 'goal-7' },
+            'node-4-4': { no: 'goal-8', yes: 'goal-9' },
+        };
+        
+        const nodeIdentifiers = [
+            'A-1', 'B-1', 'B-2', 'C-1', 'C-2', 'C-3', 'D-1', 'D-2', 'D-3', 'D-4',
+            'E-1', 'E-2', 'E-3', 'E-4', 'E-5'
+        ];
+
+        function generateChart() {
+            let shuffled = [...allQuestions];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            const selectedQuestions = shuffled.slice(0, 15);
+            questionNodes.forEach((node, index) => {
+                if (selectedQuestions[index]) {
+                    const text = selectedQuestions[index];
+                    const wrappedText = text.replace(/(.{10})/g, "$1<br>");
+                    const identifier = nodeIdentifiers[index];
+                    node.innerHTML = `<span class="node-id">${identifier}</span>${wrappedText}`;
+                }
+            });
+            resetRoute();
+        }
+
+        function resetRoute() {
+            nodes.forEach(n => n.classList.remove('active', 'answered', 'clickable', 'final-goal'));
+            lines.forEach(l => l.classList.remove('highlight-yes', 'highlight-no'));
+            
+            const startNode = document.getElementById('node-0-0');
+            startNode.classList.add('active', 'clickable');
+            gameActive = true;
+        }
+
+        function handleNodeClick(e) {
+            if (!gameActive || !e.currentTarget.classList.contains('clickable')) return;
+            currentNodeId = e.currentTarget.id;
+            modalOverlay.style.display = 'flex';
+        }
+
+        function handleChoice(choice) {
+            modalOverlay.style.display = 'none';
+            if (!currentNodeId) return;
+
+            const currentNode = document.getElementById(currentNodeId);
+            const nextNodeId = chartMap[currentNodeId][choice];
+            const lineId = `line-${currentNodeId.split('-')[1]}-${currentNodeId.split('-')[2]}-${choice}`;
+            const line = document.getElementById(lineId);
+
+            currentNode.classList.remove('active', 'clickable');
+            currentNode.classList.add('answered');
+            if (line) line.classList.add(choice === 'yes' ? 'highlight-yes' : 'highlight-no');
+
+            const nextNode = document.getElementById(nextNodeId);
+            if (nextNode) {
+                if (nextNodeId.startsWith('goal')) {
+                    nextNode.classList.add('final-goal');
+                    gameActive = false;
+                } else {
+                    nextNode.classList.add('active', 'clickable');
+                }
+            }
+            currentNodeId = null;
+        }
+
+        reloadBtn.addEventListener('click', generateChart);
+        resetRouteBtn.addEventListener('click', resetRoute);
+        questionNodes.forEach(node => node.addEventListener('click', handleNodeClick));
+        modalYesBtn.addEventListener('click', () => handleChoice('yes'));
+        modalNoBtn.addEventListener('click', () => handleChoice('no'));
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) modalOverlay.style.display = 'none';
+        });
+        
+        document.addEventListener('DOMContentLoaded', generateChart);
+    </script>
+</body>
+</html>
