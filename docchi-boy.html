@@ -238,13 +238,28 @@
   }
   .stepper .amt { flex: 1; text-align: center; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
   .stepper .amt small { font-size: 11px; color: var(--sub); }
-  .pick-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
-  .pick-list button {
-    border: 2px solid var(--line); background: var(--card); border-radius: 999px; padding: 5px 12px; font-weight: 800;
-    display: inline-flex; align-items: center; gap: 6px; font-size: 14px;
+  .explain {
+    background: #fff3c4; border: 2px solid var(--yellow-deep); border-radius: 12px; padding: 10px 12px;
+    font-size: 13px; line-height: 1.6; margin-bottom: 12px;
   }
-  .pick-list button .av { width: 16px; height: 16px; border-radius: 50%; background: var(--c); }
-  .pick-list button.on { border-color: var(--ink); background: var(--yellow); }
+  .kids { display: grid; gap: 8px; margin-bottom: 12px; }
+  .kid { border: 2px solid var(--line); border-radius: 12px; background: #fffdf7; overflow: hidden; }
+  .kid.on { border-color: var(--ink); background: #fff8d6; }
+  .kid-head {
+    display: flex; align-items: center; gap: 10px; width: 100%; border: none; background: none;
+    padding: 10px 12px; text-align: left;
+  }
+  .kid-head:disabled { opacity: 1; cursor: default; }
+  .kid-head .check {
+    width: 24px; height: 24px; border-radius: 6px; border: 2px solid var(--ink); background: var(--card);
+    display: grid; place-items: center; font-weight: 800; flex: none;
+  }
+  .kid.on .check { background: var(--ink); color: #fff; }
+  .kid-head .av { width: 28px; height: 28px; border-radius: 50%; background: var(--c); color: #fff; display: grid; place-items: center; font-weight: 800; flex: none; }
+  .kid-name { font-weight: 800; font-size: 17px; }
+  .kid-note { margin-left: auto; font-size: 13px; color: var(--sub); text-align: right; }
+  .kid.on .kid-note { color: var(--ink); }
+  .kid-bet { padding: 0 12px 10px; }
   .bet-sum { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; margin-bottom: 10px; }
 
   .bets-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13px; }
@@ -666,6 +681,8 @@ function drawBoard() {
 
 function startBetting() {
   pending = [{ target: null, amount: MIN_BET }, { target: null, amount: MIN_BET }];
+  const kids = childIdxs();
+  if (bettor() === parentIdx() && kids.length === 2) kids.forEach((ci, k) => { pending[k].target = ci; });
   activeTicket = 0;
   infoId = null;
   S.phase = 'bet';
@@ -674,7 +691,7 @@ function startBetting() {
 function betProblem() {
   const me = S.players[bettor()];
   const [a, b] = pending;
-  if (a.target === null || b.target === null) return bettor() === parentIdx() ? '2枚とも当てそうな子を選んでね' : '2枚とも賭けるマスを選んでね';
+  if (a.target === null || b.target === null) return bettor() === parentIdx() ? '当てそうな子をあと' + [a, b].filter(t => t.target === null).length + '人選んでね' : '2枚とも賭けるマスを選んでね';
   if (a.target === b.target) return '2枚とも同じ対象には賭けられません';
   if (a.amount + b.amount > me.money) return '所持金が足りません';
   return null;
@@ -835,7 +852,7 @@ function boardHTML() {
   };
   const cls = id => {
     const c = [];
-    if (S.phase === 'bet' && bettor() !== parentIdx()) c.push(isBettable(id) ? 'selectable' : 'dim');
+    if (S.phase === 'bet') c.push(bettor() !== parentIdx() && isBettable(id) ? 'selectable' : 'dim');
     if (visited.has(id)) c.push('visited');
     if (S.phase === 'race' && S.pos === id) c.push('current');
     if (['result', 'final'].includes(S.phase) && S.pos === id) c.push('reached');
@@ -898,6 +915,53 @@ function betsListHTML() {
   }).join('')}</ul>`;
 }
 
+function stepperHTML(k) {
+  return `<div class="stepper">
+    <button data-act="amt" data-k="${k}" data-d="-50">−50</button>
+    <button data-act="amt" data-k="${k}" data-d="-10">−10</button>
+    <span class="amt">${pending[k].amount}<small> ドッチ</small></span>
+    <button data-act="amt" data-k="${k}" data-d="10">＋10</button>
+    <button data-act="amt" data-k="${k}" data-d="50">＋50</button>
+    <button data-act="amt-max" data-k="${k}">MAX</button>
+  </div>`;
+}
+
+// 親の予想：子を1人ずつ並べ、当てそうな2人を選んでそれぞれに賭ける
+function parentBetHTML() {
+  const i = bettor(), me = S.players[i];
+  const kids = childIdxs();
+  const auto = kids.length === 2; // 子が2人なら2人とも選ぶしかない
+  const picked = pending.filter(t => t.target !== null).length;
+  const problem = betProblem();
+  const sum = pending[0].amount + pending[1].amount;
+  const rows = kids.map(ci => {
+    const k = pending.findIndex(t => t.target === ci);
+    const kid = S.players[ci];
+    const on = k >= 0;
+    return `<div class="kid ${on ? 'on' : ''}" style="--c:${kid.color}">
+      <button class="kid-head" data-act="pselect" data-i="${ci}" ${auto ? 'disabled' : ''} aria-pressed="${on}">
+        <span class="check">${on ? '✓' : ''}</span>
+        <span class="av">${esc([...kid.name][0])}</span>
+        <span class="kid-name">${esc(kid.name)}</span>
+        <span class="kid-note">${on ? `が当てたら <b>+${pending[k].amount * PARENT_MULT}</b>` : 'タップで選ぶ'}</span>
+      </button>
+      ${on ? `<div class="kid-bet">${stepperHTML(k)}</div>` : ''}
+    </div>`;
+  }).join('');
+  return `<aside class="panel">
+    <h3>${whoHTML(i)}（親）の予想：<br>だれが当てる？</h3>
+    <div class="explain">
+      親のあなたは、行き先ではなく<b>「予想を当てそうな子」</b>に賭けます。<br>
+      子が賭けたマスを、あなたのコマが通ったら「その子が当てた」ことになり、その子に賭けた掛け金の<b>${PARENT_MULT}倍</b>がもらえます。
+    </div>
+    <p class="lead">${auto ? '子は2人なので、2人とも選んであります。掛け金だけ決めよう。' : `当てそうな子を<b>2人</b>選ぼう（${picked} / 2）`}</p>
+    <div class="kids">${rows}</div>
+    <div class="bet-sum"><span>掛け金 合計 ${sum}</span><span>残り ${me.money - sum} ドッチ</span></div>
+    ${problem ? `<p class="warn" style="margin:0 0 10px">${esc(problem)}</p>` : ''}
+    <button class="btn primary big block" data-act="confirm-bet" ${problem ? 'disabled' : ''}>この予想で決定</button>
+  </aside>`;
+}
+
 function panelHTML() {
   const p = parentIdx();
   switch (S.phase) {
@@ -918,42 +982,28 @@ function panelHTML() {
       return `<aside class="panel">
         <h3>予想タイム（${S.cursor + 1} / ${S.order.length}）</h3>
         <p class="lead">${whoHTML(i)} さんに端末を渡してね。<br>ほかの人は画面を見ないように！</p>
+        ${i === p ? `<div class="explain">最後は親の番。親は行き先ではなく、<b>だれが予想を当てるか</b>を予想します。</div>` : ''}
         ${infoHTML()}
         <button class="btn primary big block" data-act="to-bet">${esc(S.players[i].name)} です。予想する</button>
       </aside>`;
     }
 
     case 'bet': {
-      const i = bettor(), isParent = i === p, me = S.players[i];
+      const i = bettor(), me = S.players[i];
+      if (i === p) return parentBetHTML();
       const problem = betProblem();
       const sum = pending[0].amount + pending[1].amount;
-      const tickets = pending.map((t, k) => {
-        const other = pending[1 - k];
-        const target = isParent
-          ? `<div class="pick-list">${childIdxs().map(ci => `
-              <button class="${t.target === ci ? 'on' : ''}" data-act="ppick" data-k="${k}" data-i="${ci}" ${other.target === ci ? 'disabled' : ''} style="--c:${S.players[ci].color}">
-                <span class="av"></span>${esc(S.players[ci].name)}</button>`).join('')}</div>`
-          : t.target
+      const tickets = pending.map((t, k) => `
+        <div class="ticket ${activeTicket === k ? 'active' : ''}" data-act="ticket" data-k="${k}">
+          <div class="t-head"><span>ドッチ券 ${k + 1}</span><span>${t.target ? `当たると +${t.amount * multOf(t.target)}` : ''}</span></div>
+          ${t.target
             ? `<div class="t-target">${label(t.target)}　${rowName(t.target)} ×${multOf(t.target)}</div>`
-            : `<div class="t-target empty">盤面のマスをタップして選ぶ</div>`;
-        return `<div class="ticket ${activeTicket === k ? 'active' : ''}" data-act="ticket" data-k="${k}">
-          <div class="t-head"><span>ドッチ券 ${k + 1}</span><span>${isParent ? `当たると ×${PARENT_MULT}` : t.target ? `当たると +${t.amount * multOf(t.target)}` : ''}</span></div>
-          ${target}
-          <div class="stepper">
-            <button data-act="amt" data-k="${k}" data-d="-50">−50</button>
-            <button data-act="amt" data-k="${k}" data-d="-10">−10</button>
-            <span class="amt">${t.amount}<small> ドッチ</small></span>
-            <button data-act="amt" data-k="${k}" data-d="10">＋10</button>
-            <button data-act="amt" data-k="${k}" data-d="50">＋50</button>
-            <button data-act="amt-max" data-k="${k}">MAX</button>
-          </div>
-        </div>`;
-      }).join('');
+            : `<div class="t-target empty">盤面のマスをタップして選ぶ</div>`}
+          ${stepperHTML(k)}
+        </div>`).join('');
       return `<aside class="panel">
-        <h3>${whoHTML(i)} の予想 ${isParent ? '<small>(親)</small>' : ''}</h3>
-        <p class="lead">${isParent
-          ? 'どの子が予想を当てるか、2人に賭けよう。当たれば掛け金の2倍！'
-          : '親が通りそうなマスを2つ選ぼう（3段目から下）。親コマがそのマスを踏めば 掛け金×倍率 がもらえる！'}</p>
+        <h3>${whoHTML(i)} の予想</h3>
+        <p class="lead">親が通りそうなマスを2つ選ぼう（3段目から下）。親コマがそのマスを踏めば 掛け金×倍率 がもらえる！</p>
         ${infoHTML()}
         <div class="tickets">${tickets}</div>
         <div class="bet-sum"><span>掛け金 合計 ${sum}</span><span>残り ${me.money - sum} ドッチ</span></div>
@@ -1155,7 +1205,11 @@ const actions = {
   },
   'to-handoff'() { S.phase = 'handoff'; infoId = null; },
   redraw() { drawBoard(); infoId = null; },
-  'to-bet'() { startBetting(); },
+  'to-bet'() {
+    startBetting();
+    // 親は盤面を使わないので、予想パネルを見えるところへ
+    if (bettor() === parentIdx()) requestAnimationFrame(() => $('.panel')?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+  },
   card(el) {
     const id = el.dataset.id;
     if (S.phase === 'bet' && bettor() !== parentIdx()) {
@@ -1170,11 +1224,13 @@ const actions = {
     infoId = infoId === id ? null : id;
   },
   ticket(el) { activeTicket = +el.dataset.k; },
-  ppick(el) {
-    const k = +el.dataset.k;
-    pending[k].target = +el.dataset.i;
-    activeTicket = k;
-    if (pending[1 - k].target === null) activeTicket = 1 - k;
+  pselect(el) {
+    const ci = +el.dataset.i;
+    const k = pending.findIndex(t => t.target === ci);
+    if (k >= 0) { pending[k] = { target: null, amount: MIN_BET }; return; }
+    const empty = pending.findIndex(t => t.target === null);
+    if (empty < 0) { toast('選べるのは2人まで。どちらかを外してから選んでね'); return; }
+    pending[empty].target = ci;
   },
   amt(el) {
     const k = +el.dataset.k, t = pending[k];
