@@ -1,6 +1,6 @@
 // オフラインでも起動できるように、アプリ一式をキャッシュする Service Worker。
 // ファイルを更新したら CACHE の番号を上げると、古いキャッシュが入れ替わる。
-const CACHE = 'docchi-boy-v3';
+const CACHE = 'docchi-boy-v4';
 const APP_FILES = [
   './',
   './index.html',
