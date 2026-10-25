@@ -1,0 +1,1280 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>どっちぼーい</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fff7e3;
+    --dot: #f4e6c2;
+    --ink: #2d2a26;
+    --sub: #7d7466;
+    --card: #ffffff;
+    --line: #eadfc6;
+    --yellow: #ffd84d;
+    --yellow-deep: #f2b705;
+    --yes: #43b3ec;
+    --yes-soft: #dcf2fd;
+    --no: #f26fa6;
+    --no-soft: #fde3ee;
+    --ok: #2bb673;
+    --radius: 14px;
+    --shadow: 0 2px 0 rgba(45, 42, 38, .08), 0 6px 18px rgba(45, 42, 38, .06);
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--bg);
+    background-image: radial-gradient(var(--dot) 1.2px, transparent 1.2px);
+    background-size: 18px 18px;
+    color: var(--ink);
+    font-family: 'M PLUS Rounded 1c', 'Hiragino Maru Gothic ProN', 'Hiragino Sans', 'Meiryo', system-ui, sans-serif;
+    font-weight: 500;
+    line-height: 1.5;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  button:disabled { cursor: not-allowed; opacity: .45; }
+  input, textarea { font: inherit; color: inherit; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    border: 2px solid var(--ink); border-radius: 999px;
+    background: var(--card); padding: 10px 18px; font-weight: 800;
+    box-shadow: 0 3px 0 var(--ink); transition: transform .08s, box-shadow .08s;
+  }
+  .btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 0 0 var(--ink); }
+  .btn.primary { background: var(--yellow); }
+  .btn.small { padding: 6px 12px; font-size: 13px; box-shadow: 0 2px 0 var(--ink); }
+  .btn.ghost { border-color: transparent; box-shadow: none; background: transparent; text-decoration: underline; padding: 6px 8px; }
+  .btn.block { width: 100%; }
+  .btn.big { font-size: 18px; padding: 14px 22px; }
+
+  /* ---------- タイトル画面 ---------- */
+  .setup { max-width: 560px; margin: 0 auto; padding: 28px 16px 48px; }
+  .logo { text-align: center; margin: 8px 0 24px; }
+  .logo h1 {
+    margin: 0; font-size: clamp(40px, 11vw, 64px); font-weight: 800; letter-spacing: .02em; line-height: 1.1;
+    color: var(--ink); text-shadow: 3px 3px 0 var(--yellow);
+  }
+  .logo h1 .y { color: var(--yes); }
+  .logo h1 .n { color: var(--no); }
+  .logo p { margin: 8px 0 0; color: var(--sub); font-size: 14px; }
+  .box {
+    background: var(--card); border: 2px solid var(--ink); border-radius: var(--radius);
+    padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 0 var(--ink);
+  }
+  .box h2 { margin: 0 0 12px; font-size: 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .box h2 small { font-weight: 500; color: var(--sub); font-size: 12px; }
+  .player-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .player-row .dot { width: 14px; height: 14px; border-radius: 50%; flex: none; }
+  .player-row input {
+    flex: 1; min-width: 0; border: 2px solid var(--line); border-radius: 10px; padding: 9px 12px; background: #fffdf7;
+  }
+  .player-row input:focus { outline: none; border-color: var(--ink); }
+  .icon-btn { border: none; background: none; font-size: 20px; line-height: 1; padding: 6px 8px; color: var(--sub); }
+  .set-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+  .set-row:last-of-type { border-bottom: none; }
+  .set-row label { display: flex; align-items: center; gap: 10px; flex: 1; cursor: pointer; }
+  .set-row input { width: 20px; height: 20px; accent-color: var(--ink); }
+  .set-row .count { color: var(--sub); font-size: 13px; }
+  .note { color: var(--sub); font-size: 13px; margin: 8px 0 0; }
+  .warn { color: #c0392b; font-size: 13px; margin: 8px 0 0; font-weight: 700; }
+  .setup-actions { display: grid; gap: 10px; }
+
+  /* ---------- ゲーム画面 ---------- */
+  .topbar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    max-width: 1320px; margin: 0 auto; padding: 12px 16px 0;
+  }
+  .topbar .mini-logo { font-weight: 800; font-size: 20px; text-shadow: 2px 2px 0 var(--yellow); }
+  .topbar .round { font-size: 13px; font-weight: 700; background: var(--ink); color: #fff; border-radius: 999px; padding: 3px 10px; }
+  .topbar .spacer { flex: 1; }
+  .wallets { display: flex; gap: 6px; flex-wrap: wrap; max-width: 1320px; margin: 10px auto 0; padding: 0 16px; }
+  .wallet {
+    display: flex; align-items: center; gap: 6px; background: var(--card); border: 2px solid var(--line);
+    border-radius: 999px; padding: 3px 10px 3px 4px; font-size: 13px; font-weight: 700;
+  }
+  .wallet .av { width: 22px; height: 22px; border-radius: 50%; background: var(--c); color: #fff; display: grid; place-items: center; font-size: 12px; }
+  .wallet .money { font-variant-numeric: tabular-nums; }
+  .wallet.parent { border-color: var(--yellow-deep); background: #fff3c4; }
+  .wallet.turn { border-color: var(--ink); }
+  .wallet .tag { font-size: 10px; background: var(--yellow-deep); color: #fff; border-radius: 6px; padding: 0 5px; }
+
+  .game {
+    display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; align-items: start;
+    max-width: 1320px; margin: 0 auto; padding: 14px 16px 32px;
+  }
+  @media (max-width: 920px) {
+    .game { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  }
+
+  /* 盤面 */
+  .board-wrap { background: rgba(255,255,255,.55); border: 2px solid var(--line); border-radius: 18px; padding: clamp(8px, 2vw, 20px); }
+  .board {
+    position: relative; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr));
+    column-gap: clamp(3px, .9vw, 10px); row-gap: clamp(12px, min(2.4vw, 2.6vh), 24px);
+  }
+  .lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: visible; }
+  .lines .ln { stroke: #d9cdb1; stroke-width: 2; stroke-linecap: round; }
+  .lines .ln.on.yes { stroke: var(--yes); stroke-width: 5; }
+  .lines .ln.on.no { stroke: var(--no); stroke-width: 5; }
+  .start-tag {
+    align-self: center; justify-self: start; z-index: 1;
+    background: var(--yellow); border: 2px solid var(--ink); border-radius: 10px; padding: 4px 8px;
+    font-weight: 800; font-size: clamp(10px, 1.5vw, 14px); line-height: 1.2; text-align: center;
+  }
+  .start-tag small { display: block; font-size: .72em; font-weight: 700; }
+
+  .card {
+    position: relative; z-index: 1; display: flex; flex-direction: column; align-items: stretch; text-align: left;
+    min-width: 0; min-height: clamp(62px, min(10.5vw, 11vh), 100px);
+    background: var(--card); border: 2px solid var(--line); border-radius: 10px;
+    padding: clamp(4px, .8vw, 8px); font-size: clamp(9px, 1.45vw, 14px); line-height: 1.32;
+    box-shadow: var(--shadow); transition: transform .15s, border-color .15s, box-shadow .15s, opacity .2s;
+  }
+  .card .cid { font-weight: 800; font-size: .82em; color: var(--sub); }
+  .card .qt {
+    display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+    overflow-wrap: anywhere; margin-top: 1px;
+  }
+  .card .mult {
+    position: absolute; top: -8px; right: -4px; background: var(--yellow); border: 1.5px solid var(--ink);
+    border-radius: 999px; padding: 0 6px; font-size: .78em; font-weight: 800; line-height: 1.5;
+  }
+  .card.goal {
+    align-items: center; justify-content: center; text-align: center; padding: 4px 2px;
+    min-height: clamp(54px, min(8vw, 9vh), 80px);
+  }
+  .card.goal.Y { background: var(--yes-soft); border-color: #a9dcf5; }
+  .card.goal.N { background: var(--no-soft); border-color: #f7b8d1; }
+  .card.goal .gid { font-weight: 800; font-size: .9em; }
+  .card.goal .gm { font-weight: 800; font-size: 1.25em; line-height: 1.1; }
+  .card.goal.Y .gm { color: #1584bd; }
+  .card.goal.N .gm { color: #d13d7b; }
+
+  .card.visited { opacity: .72; }
+  .card.current { border-color: var(--ink); box-shadow: 0 0 0 4px var(--yellow), var(--shadow); transform: translateY(-2px); opacity: 1; }
+  .card.reached { border-color: var(--ink); box-shadow: 0 0 0 4px var(--yellow), var(--shadow); opacity: 1; transform: translateY(-2px); }
+  .card.dim { opacity: .38; }
+  .card.selectable:hover { border-color: var(--ink); }
+  .card.pick { border-color: var(--ink); box-shadow: 0 0 0 3px var(--ink), var(--shadow); opacity: 1; }
+  .card.info { outline: 2px dashed var(--sub); outline-offset: 2px; }
+  .card .stamp {
+    position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%); z-index: 2;
+    font-size: 10px; font-weight: 800; color: #fff; border-radius: 999px; padding: 0 7px; line-height: 1.6;
+  }
+  .card .stamp.yes { background: var(--yes); }
+  .card .stamp.no { background: var(--no); }
+  .card .ticket-tag {
+    position: absolute; left: -4px; top: -9px; background: var(--ink); color: #fff; border-radius: 999px;
+    font-size: .74em; font-weight: 800; padding: 0 6px; line-height: 1.6;
+  }
+  .koma {
+    position: absolute; top: -12px; left: -8px; z-index: 3; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--yellow); border: 2px solid var(--ink); display: grid; place-items: center;
+    font-size: 12px; font-weight: 800; animation: hop .9s ease-in-out infinite;
+  }
+  @keyframes hop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+  .chips { display: flex; flex-wrap: wrap; gap: 2px; margin-top: auto; padding-top: 3px; }
+  .card.goal .chips { justify-content: center; margin-top: 2px; }
+  .chip {
+    width: clamp(13px, 1.9vw, 20px); height: clamp(13px, 1.9vw, 20px); border-radius: 50%; background: var(--c);
+    color: #fff; font-size: clamp(8px, 1.1vw, 11px); font-weight: 800; display: grid; place-items: center; line-height: 1;
+  }
+  .chip.hit { box-shadow: 0 0 0 2px var(--yellow), 0 0 0 3.5px var(--ink); }
+
+  /* パネル */
+  .panel {
+    background: var(--card); border: 2px solid var(--ink); border-radius: 18px; padding: 16px;
+    box-shadow: 0 4px 0 var(--ink); position: sticky; top: 12px;
+  }
+  @media (max-width: 920px) {
+    .panel { position: static; }
+    .panel.race { position: sticky; top: auto; bottom: 8px; z-index: 5; }
+  }
+  .panel h3 { margin: 0 0 6px; font-size: 18px; }
+  .panel .lead { margin: 0 0 12px; color: var(--sub); font-size: 14px; }
+  .panel .stack { display: grid; gap: 10px; }
+  .who { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; }
+  .who .av { width: 22px; height: 22px; border-radius: 50%; background: var(--c); color: #fff; display: grid; place-items: center; font-size: 12px; }
+
+  .qbox {
+    border: 2px solid var(--line); border-radius: 12px; padding: 12px; background: #fffdf7; margin-bottom: 12px;
+  }
+  .qbox .qid { font-size: 12px; font-weight: 800; color: var(--sub); }
+  .qbox .qtext { font-size: 20px; font-weight: 800; line-height: 1.45; overflow-wrap: anywhere; }
+  .qbox.small .qtext { font-size: 15px; }
+  .yn { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .yn .btn { font-size: 22px; padding: 14px 10px; color: #fff; }
+  .yn .yes { background: var(--yes); }
+  .yn .no { background: var(--no); }
+  .progress { display: flex; gap: 4px; margin-bottom: 10px; }
+  .progress span { flex: 1; height: 6px; border-radius: 3px; background: var(--line); }
+  .progress span.done { background: var(--ink); }
+
+  .tickets { display: grid; gap: 10px; margin-bottom: 12px; }
+  .ticket {
+    border: 2px dashed var(--line); border-radius: 12px; padding: 10px 12px; background: #fffdf7; cursor: pointer;
+  }
+  .ticket.active { border: 2px solid var(--ink); background: #fff8d6; }
+  .ticket .t-head { display: flex; justify-content: space-between; align-items: baseline; font-weight: 800; font-size: 13px; }
+  .ticket .t-target { font-size: 16px; font-weight: 800; margin: 4px 0 8px; }
+  .ticket .t-target.empty { color: var(--sub); font-weight: 700; font-size: 14px; }
+  .stepper { display: flex; align-items: center; gap: 4px; }
+  .stepper button {
+    border: 2px solid var(--ink); background: var(--card); border-radius: 8px; min-width: 40px; padding: 4px 6px; font-weight: 800; font-size: 13px;
+  }
+  .stepper .amt { flex: 1; text-align: center; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .stepper .amt small { font-size: 11px; color: var(--sub); }
+  .pick-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
+  .pick-list button {
+    border: 2px solid var(--line); background: var(--card); border-radius: 999px; padding: 5px 12px; font-weight: 800;
+    display: inline-flex; align-items: center; gap: 6px; font-size: 14px;
+  }
+  .pick-list button .av { width: 16px; height: 16px; border-radius: 50%; background: var(--c); }
+  .pick-list button.on { border-color: var(--ink); background: var(--yellow); }
+  .bet-sum { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+
+  .bets-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13px; }
+  .bets-list li { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .bets-list .tk { background: #f6f0e1; border-radius: 6px; padding: 0 6px; font-weight: 700; }
+  .bets-list .tk.hit { background: var(--yellow); }
+  details.more { margin-top: 12px; border-top: 1px dashed var(--line); padding-top: 10px; }
+  details.more summary { cursor: pointer; font-weight: 800; font-size: 14px; }
+  details.more[open] summary { margin-bottom: 8px; }
+
+  .table { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 12px; }
+  .table th, .table td { padding: 7px 4px; border-bottom: 1px dashed var(--line); text-align: left; }
+  .table td.num, .table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .table .plus { color: var(--ok); font-weight: 800; }
+  .rank { font-size: 22px; width: 36px; }
+  .goal-banner {
+    text-align: center; border-radius: 12px; padding: 12px; margin-bottom: 12px; font-weight: 800; border: 2px solid var(--ink);
+  }
+  .goal-banner.Y { background: var(--yes-soft); }
+  .goal-banner.N { background: var(--no-soft); }
+  .goal-banner .big { font-size: 26px; display: block; }
+
+  /* モーダル */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(45, 42, 38, .45); z-index: 50; display: grid; place-items: center; padding: 16px;
+  }
+  .modal {
+    background: var(--card); border: 2px solid var(--ink); border-radius: 18px; box-shadow: 0 5px 0 var(--ink);
+    width: min(640px, 100%); max-height: calc(100vh - 32px); overflow: auto; padding: 20px;
+  }
+  .modal h2 { margin: 0 0 12px; font-size: 20px; }
+  .modal h4 { margin: 16px 0 4px; }
+  .modal p, .modal li { font-size: 14px; }
+  .modal ol, .modal ul { padding-left: 20px; margin: 4px 0; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .tabs button { border: 2px solid var(--line); background: var(--card); border-radius: 999px; padding: 4px 12px; font-weight: 700; font-size: 13px; }
+  .tabs button.on { border-color: var(--ink); background: var(--yellow); }
+  .ed-name { width: 100%; border: 2px solid var(--line); border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+  .ed-text {
+    width: 100%; min-height: 260px; border: 2px solid var(--line); border-radius: 10px; padding: 10px; resize: vertical;
+    font-size: 14px; line-height: 1.6; background: #fffdf7;
+  }
+  .ed-text:focus, .ed-name:focus { outline: none; border-color: var(--ink); }
+  .ed-tools { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; align-items: center; }
+  .file-btn input { display: none; }
+
+  /* トースト */
+  #toasts { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 60; display: grid; gap: 8px; width: min(420px, calc(100% - 32px)); pointer-events: none; }
+  .toast {
+    background: var(--ink); color: #fff; border-radius: 14px; padding: 10px 14px; font-weight: 700; font-size: 14px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.2); animation: pop .25s ease-out; transition: opacity .3s, transform .3s;
+  }
+  .toast.hit { background: var(--yellow); color: var(--ink); border: 2px solid var(--ink); }
+  .toast.out { opacity: 0; transform: translateY(-8px); }
+  @keyframes pop { from { transform: scale(.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modal-root"></div>
+<div id="toasts" aria-live="polite"></div>
+
+<script>
+'use strict';
+
+// ===== 定数 =====
+const DEFAULT_SETS = [
+ {
+  "id": "normal",
+  "name": "ノーマル",
+  "questions": [
+   "透明人間になれるとしたら、なってみたい",
+   "過去に戻れるとしても、今の人生を変えたくない",
+   "タイムマシンがあったら、未来より過去に行ってみたい",
+   "不老不死になれるとしたら、なりたいと思う",
+   "ひとつだけ魔法が使えるなら、使ってみたい",
+   "動物と話せる能力がほしい",
+   "生まれ変わるなら、今とは違う性別がいい",
+   "宝くじで高額当選したら、今の仕事は辞める",
+   "人の心を読める能力は、欲しいと思わない",
+   "無人島に一つだけ持っていくなら、スマホを選ぶ",
+   "スマホの画面は常に綺麗にしておきたい",
+   "本は電子書籍より紙で読みたい",
+   "食べ物の好き嫌いはほとんどない",
+   "洋服のタグは切らないと気になる",
+   "自分の部屋は、ある程度整頓されていないと落ち着かない",
+   "人におすすめされたものは、とりあえず試してみる方だ",
+   "日記やブログなど、何かを記録する習慣がある",
+   "「限定品」という言葉に弱い",
+   "自分の「ラッキーナンバー」がある",
+   "人にどう思われるかより、自分のスタイルを貫きたい",
+   "どちらかといえば、節約は得意な方だ",
+   "ポイントカードやクーポンは積極的に利用する",
+   "友人との食事では、きっちり割り勘にしたい",
+   "自分へのご褒美として、高価なものを買うことがある",
+   "お金は「使う」ためにあると思う",
+   "自動販売機より、スーパーで飲み物を買うことが多い",
+   "趣味にかけるお金は惜しまない",
+   "人にお金を貸すことに抵抗がある",
+   "将来のために、貯金や投資をしている",
+   "恋愛において、見た目はかなり重要だと思う",
+   "好きな人には、自分から積極的にアピールしたい",
+   "遠距離恋愛はできないと思う",
+   "恋人やパートナーとは、毎日連絡を取りたい",
+   "一度冷めた気持ちは、もう戻らない",
+   "友達の数は多い方だと思う",
+   "嫌いな人とも、うまく付き合っていくことができる",
+   "約束を破られると、かなり根に持つタイプだ",
+   "一人の時間がないとダメになる",
+   "知らない場所に行くときは、地図アプリが手放せない",
+   "映画は、ハッピーエンドの物語が好きだ",
+   "行列に並んでまで食べたいと思うものはあまりない",
+   "季節の変わり目は、少しだけ切ない気持ちになる",
+   "手紙やハガキなど、手書きのメッセージをもらうと嬉しい",
+   "新しいことを始めるのに、あまり抵抗はない方だ",
+   "ジェットコースターは、好き好んで乗る方ではない",
+   "SNSは、見る専門で自分から発信することは少ない",
+   "サプライズは、するのもされるのも好きだ",
+   "悩み事は、信頼できる人にだけ相談したい",
+   "喧嘩をしても、次の日には忘れていることが多い",
+   "「ありがとう」と「ごめんなさい」は、すぐに言うようにしている",
+   "完璧を目指すよりも、まずは行動することが大事だと思う",
+   "運命や占いは、良いことだけを信じるようにしている",
+   "一度始めたことは、最後までやり遂げたい",
+   "時間にルーズな人は、少し苦手かもしれない",
+   "休みの日は、家でゆっくり過ごすのが好きだ",
+   "あてもなく散歩するのが好きだ",
+   "寝る前に、必ずストレッチをする習慣がある",
+   "大勢でいるよりも、一人でいる方が気楽だと感じることがある",
+   "旅行の計画は、細かく立てないと不安になる",
+   "知らない人とでも、すぐに打ち解けられる方だ",
+   "結果よりも、そこに至るまでの過程が大事だと思う",
+   "ファッションには、自分なりのこだわりがある",
+   "電話をかけるより、メッセージで済ませることが多い",
+   "どちらかといえば、朝型より夜型の人間だ",
+   "一度気になると、とことん調べないと気が済まない",
+   "自分の直感は、結構当たることが多いと思う",
+   "四季の中では、金木犀の香りがする秋が一番好きだ",
+   "お店選びでは、味もだが雰囲気をかなり重視する",
+   "プレゼントは、相手が本当に欲しいものをあげたい",
+   "歴史上の人物に会えるなら、会ってみたい人がいる",
+   "理不尽なことには、はっきりと意見を言いたい",
+   "流行りの音楽よりも、昔から聴いている曲を好む",
+   "何歳になっても、学ぶ姿勢は忘れたくない",
+   "物事は、白黒はっきりさせたいタイプだ",
+   "涙もろい方で、映画やドラマを見てよく泣く",
+   "頼まれごとは、基本的に断れない",
+   "部屋の模様替えを、定期的にしたくなる",
+   "「なんとかなる」が、なんだかんだで信条だ",
+   "自分の事をせっかちだと思う",
+   "寒いより暑いほうがいい",
+   "冬より夏が好きだ",
+   "秋より春が好きだ",
+   "和菓子か洋菓子か",
+   "集合場所には5分前につくようにしている",
+   "旅行の荷物は少ない方だ",
+   "朝の準備は１５分以内だ",
+   "ご飯を食べるのが速いと思う",
+   "一番好きな麺類はラーメンだ",
+   "恋愛では追いかけたい派だ",
+   "告白をしたことがある",
+   "告白をされたことがある",
+   "ひとり行動が好き",
+   "自分は潔癖か",
+   "流行に敏感だ",
+   "自分は周りの意見に流されやすい",
+   "インドア派だ",
+   "生まれ変わっても人間がいい",
+   "責任感が強い方だと思う",
+   "定期的に新しい友人を作っている",
+   "単純明快なアイデアよりも、複雑で斬新なアイデアのほうがワクワクする",
+   "事実に基づいた議論よりも、感情的に響くものに説得力を感じる",
+   "自分の生活と仕事の空間は、清潔で整理整頓されている",
+   "大きなプレッシャーがあっても通常、冷静でいられる",
+   "人脈を広げたり、見知らぬ人に自分を売り込んだりするのは、とても大変だと感じる",
+   "仕事に優先順位をつけ、効率的に計画を立て、期限よりかなり前に完了させることが多い",
+   "数字やデータより、人々の物語や感情の方があなたに力強く響く",
+   "予定表やリストなどの整理・管理ツールを使うのが好き",
+   "些細なことでも間違えると、自分の能力と知識全般を疑ってしまう",
+   "事前のアレンジなしに、自分が興味のある人のところに行って話しかけるのは簡単",
+   "クリエイティブな作品のさまざまな解釈についての議論には、興味がない",
+   "行動方針を決めるとき、あなたは他の人の感情より事実を大切にする",
+   "自分の生活の空間は、清潔で整理整頓されている",
+   "チームで何かをするのが好き",
+   "物事が悪い方向に向かうのではないかと心配しがち",
+   "グループで行う趣味やアクティビティより、一人で行うものの方が楽しい",
+   "やらなければいけないことをしてからリラックスするのが好き",
+   "イヌよりもネコ派だ",
+   "地球外生命体の存在を信じている",
+   "幽霊を信じている",
+   "昆虫や蛇のようなエキゾチックな珍味を食べてみたいと思う",
+   "徹夜で試験勉強をしたことがある",
+   "人は基本的な性格を変えられると思う",
+   "過去へ行くことは論理的に可能だと思う",
+   "未来へ行くことは論理的に可能だと思う",
+   "もしチャンスがあれば人生をやり直したい",
+   "一度は海外に住んでみたいと思う",
+   "男女の友情は成立すると思う",
+   "一生住むなら都会より田舎だ",
+   "一日だけいけるなら過去より未来だ",
+   "生まれ変われるならまた同じ性別がいい",
+   "人生これからだと思う"
+  ]
+ },
+ {
+  "id": "love",
+  "name": "恋愛",
+  "questions": [
+   "一目惚れをしたことがある",
+   "恋愛では駆け引きが必要だと思う",
+   "好きな人の過去の恋愛は、すべて知りたい",
+   "友人関係から恋愛に発展することは、ない",
+   "恋人とは、金銭感覚が合わないと無理だ",
+   "サプライズでプレゼントをされるのが好きだ",
+   "恋人とお揃いのものを持つことに憧れる",
+   "ケンカをしたら、自分から謝る方だ",
+   "恋人にも、言えない秘密があっていい",
+   "束縛されるのは、愛情表現だと感じる",
+   "恋愛感情は、時間と共に薄れていくものだと思う",
+   "記念日や誕生日は、盛大にお祝いしたい",
+   "恋人ができたら、SNSで公表したい",
+   "恋人の携帯電話を、こっそり見たことがある",
+   "恋愛において、ユーモアのセンスはとても大事だ",
+   "恋人とのデートプランは、自分で細かく立てたい",
+   "復縁した経験がある",
+   "恋愛が、生活の中で最も優先順位が高い",
+   "相手の気を引くために、わざと嫉妬させることがある",
+   "恋愛相談は、同性の友達にするのが一番だ",
+   "恋人の服装や髪型は、自分の好みに変えてほしい",
+   "恋人との将来を、付き合ってすぐに想像してしまう",
+   "恋人のために、自分の趣味の時間を削ることができる",
+   "「好き」という言葉は、軽々しく口にしたくない",
+   "恋人の家族や友人とは、積極的に仲良くなりたい",
+   "どんなに好きでも、結婚願望のない相手とは付き合えない",
+   "恋愛対象として、年齢はかなり気にする方だ",
+   "恋人がいても、一人の時間は絶対に必要だ",
+   "一度でも浮気をされたら、絶対に許せない",
+   "恋人とは、お互いを高め合える関係が理想だ",
+   "デートの支払いは、割り勘が当たり前だと思う",
+   "恋人の影響で、自分の趣味や好みが変わったことがある",
+   "連絡はマメな方より、たまにくるくらいが丁度いい",
+   "恋人に自分の弱みを、すべて見せることができる",
+   "恋愛に「安定」よりも「刺激」を求めてしまう",
+   "別れた恋人とは、友達に戻れる",
+   "相手の学歴や職業を、少し気にしてしまう",
+   "恋人のSNSは、頻繁にチェックしてしまう",
+   "尽くすよりも、尽くされたいタイプだ",
+   "恋愛映画やドラマを見ると、自分の恋愛に影響されやすい",
+   "恋人が落ち込んでいる時は、理由を聞かずにそばにいてあげたい",
+   "友達だと思っていた相手を、急に異性として意識することがある",
+   "恋愛のためなら、住む場所を変えることも厭わない",
+   "パートナー選びでは、尊敬できるかどうかを最も重視する",
+   "喧嘩の後は、すぐに話し合って解決したい",
+   "恋人の前では、いつでも完璧な自分でいたい",
+   "共通の趣味がない相手との恋愛は、考えられない",
+   "恋愛において、第一印象はあまり当てにならないと思う",
+   "恋人がいても、他の異性に魅力を感じることはある",
+   "愛があれば、どんな困難も乗り越えられると信じている",
+   "恋人が異性の投稿に「いいね」をするのは気になる",
+   "今の恋人が、今までで一番好きだと言い切れる",
+   "パートナー選びに、親の意見は影響する",
+   "恋人には、自分の仕事の内容を詳しく話したい",
+   "付き合ったら、すぐに同棲を考えたい",
+   "言葉で愛情を伝えられるより、態度で示される方が嬉しい",
+   "恋人には、常に身だしなみを整えていてほしい",
+   "恋愛は、お互いの欠点を許し合うことだと思う",
+   "ケンカは長引かせたくないので、納得いかなくても折れることがある",
+   "友達との予定より、恋人との約束を優先する",
+   "恋人とお互いのスマホのパスワードを共有したい",
+   "お家デートよりも、外に出てアクティブに過ごしたい",
+   "恋人というより、親友のような関係が理想だ",
+   "過去の恋愛を振り返って、後悔することがよくある",
+   "好きな人の前で、感情的になって泣いてしまうことがある",
+   "周りから「お似合いだね」と言われると、とても嬉しい",
+   "もし好きになった人に恋人がいても、諦めずにアピールする",
+   "食べ物の好みが合わない人との恋愛は難しい",
+   "プレゼントは、高価なものより心のこもった手作りのものが嬉しい",
+   "付き合う前に、相手の結婚願望の有無を確認したい",
+   "恋人には、健康的な生活を送ってほしいと強く思う",
+   "恋人に頼るより、何でも自分で解決したい",
+   "二人の間に問題が起きたら、まず友達に相談する",
+   "一度ついた嘘は、どんなに謝られても許せない",
+   "自分の理想の恋愛像を、相手に押し付けてしまうことがある",
+   "電話で話すより、ビデオ通話で顔を見て話したい",
+   "人は恋をすると、良い方向に変わるものだと思う",
+   "別れるときは、相手に直接会って伝えたい",
+   "恋人が昔の恋人の話をするのは、あまり良い気がしない",
+   "「一生一緒にいよう」という言葉を信じている",
+   "バレンタインに自分用にチョコを買ったことがある",
+   "今までに異性にチョコを渡したことがある",
+   "年上派?",
+   "恋人には頼られたいか",
+   "“身長”は自分が相手に求める条件の3本の指以内に入るか",
+   "内向的な人が好みか",
+   "告白する（される）なら直接派かLINE派か",
+   "デートはアウトドアか",
+   "自分はホレやすい方だと思いますか？"
+  ]
+ }
+];
+const START_BONUS = 100;      // ラウンド開始時に全員がもらえるドッチ
+const MIN_BET = 10;
+const PARENT_MULT = 2;        // 親の予想が当たったときの倍率
+const ROW_MULT = [0, 0, 2, 3, 4];
+const ROW_NAMES = ['', '', '知人の段', '友達の段', '親友の段'];
+const GOAL_MULT = [16, 12, 8, 12, 16];
+const COLORS = ['#e8506b', '#3a86ff', '#20b2a0', '#ff9416', '#8e5cf7', '#6a994e'];
+const LS_SETS = 'docchi-boy:sets:v1';
+const LS_GAME = 'docchi-boy:game:v1';
+const LS_NAMES = 'docchi-boy:names:v1';
+
+// 盤面のマスID: 質問は q{段}{列}（0始まり）、ソウルメイトの段は Y1〜Y5 / N1〜N5
+const QIDS = [];
+for (let r = 0; r < 5; r++) for (let c = 0; c <= r; c++) QIDS.push(`q${r}${c}`);
+
+// ===== ユーティリティ =====
+const $ = (sel, root = document) => root.querySelector(sel);
+const esc = s => String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+const shuffle = arr => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+const parseLines = text => [...new Set(String(text).split(/\r?\n/).map(s => s.trim()).filter(Boolean))];
+const store = {
+  get(key) { try { return JSON.parse(localStorage.getItem(key)); } catch { return null; } },
+  set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* 保存できない環境でも遊べる */ } },
+  del(key) { try { localStorage.removeItem(key); } catch { /* noop */ } },
+};
+
+const isGoal = id => id[0] !== 'q';
+const rowOf = id => +id[1];
+const label = id => isGoal(id) ? `${id[0]}-${id.slice(1)}` : `${'ABCDE'[rowOf(id)]}-${+id[2] + 1}`;
+const multOf = id => isGoal(id) ? GOAL_MULT[+id.slice(1) - 1] : ROW_MULT[rowOf(id)];
+const rowName = id => isGoal(id) ? 'ソウルメイトの段' : ROW_NAMES[rowOf(id)];
+const isBettable = id => multOf(id) > 0;
+// 公式どおり YES は左下、NO は右下へ
+function nextOf(id, ans) {
+  const r = rowOf(id), c = +id[2];
+  if (r < 4) return `q${r + 1}${ans === 'yes' ? c : c + 1}`;
+  return `${ans === 'yes' ? 'Y' : 'N'}${c + 1}`;
+}
+
+// ===== 質問セット =====
+function loadSets() {
+  const base = DEFAULT_SETS.map(d => ({ id: d.id, name: d.name, builtin: true, questions: [...d.questions], enabled: d.id === 'normal' }));
+  const saved = store.get(LS_SETS);
+  if (!Array.isArray(saved)) return base;
+  const out = saved
+    .filter(s => s && Array.isArray(s.questions))
+    .map(s => ({
+      id: String(s.id), name: String(s.name || '名前なし'), builtin: DEFAULT_SETS.some(d => d.id === s.id),
+      questions: s.questions.map(String), enabled: !!s.enabled,
+    }));
+  base.slice().reverse().forEach(b => { if (!out.some(s => s.id === b.id)) out.unshift(b); });
+  return out;
+}
+let sets = loadSets();
+const saveSets = () => store.set(LS_SETS, sets);
+const enabledPool = () => parseLines(sets.filter(s => s.enabled).flatMap(s => s.questions).join('\n'));
+
+// ===== 状態 =====
+let draftNames = (() => {
+  const saved = store.get(LS_NAMES);
+  return Array.isArray(saved) && saved.length >= 3 ? saved.slice(0, 6).map(String) : ['', '', ''];
+})();
+let S = null;          // 進行中のゲーム
+let undoStack = [];    // 出走中の「1つ戻す」用
+let infoId = null;     // タップして詳細表示中のマス
+let pending = null;    // 入力中のドッチ券
+let activeTicket = 0;
+let editorSetId = null;
+let confirmAction = null;
+
+const saveGame = () => { if (S) store.set(LS_GAME, S); };
+const parentIdx = () => S.round;
+const childIdxs = () => S.players.map((_, i) => i).filter(i => i !== parentIdx());
+const bettor = () => S.order[S.cursor];
+
+// ===== ゲーム進行 =====
+function newGame(names, pool) {
+  S = {
+    phase: 'intro',
+    players: names.map((name, i) => ({ name, money: 0, color: COLORS[i] })),
+    round: 0, pool, deck: shuffle(pool), board: [],
+    bets: {}, order: [], cursor: 0, path: [], pos: 'q00', gains: [],
+  };
+  beginRound();
+}
+
+function beginRound() {
+  const n = S.players.length, p = parentIdx();
+  S.players.forEach(pl => { pl.money += START_BONUS; });
+  drawBoard();
+  S.bets = {};
+  S.order = [...Array(n - 1)].map((_, k) => (p + 1 + k) % n).concat(p); // 親の左隣から、親は最後
+  S.cursor = 0;
+  S.path = [];
+  S.pos = 'q00';
+  S.gains = S.players.map(() => 0);
+  S.phase = 'intro';
+  undoStack = [];
+  infoId = null;
+}
+
+function drawBoard() {
+  if (S.deck.length < QIDS.length) {
+    const onBoard = new Set(S.board);
+    S.deck = shuffle(S.pool.filter(q => !onBoard.has(q)));
+    if (S.deck.length < QIDS.length) S.deck = shuffle(S.pool);
+  }
+  S.board = S.deck.splice(0, QIDS.length);
+}
+
+function startBetting() {
+  pending = [{ target: null, amount: MIN_BET }, { target: null, amount: MIN_BET }];
+  activeTicket = 0;
+  infoId = null;
+  S.phase = 'bet';
+}
+
+function betProblem() {
+  const me = S.players[bettor()];
+  const [a, b] = pending;
+  if (a.target === null || b.target === null) return bettor() === parentIdx() ? '2枚とも当てそうな子を選んでね' : '2枚とも賭けるマスを選んでね';
+  if (a.target === b.target) return '2枚とも同じ対象には賭けられません';
+  if (a.amount + b.amount > me.money) return '所持金が足りません';
+  return null;
+}
+
+function confirmBet() {
+  if (betProblem()) return;
+  const i = bettor();
+  S.players[i].money -= pending[0].amount + pending[1].amount;
+  S.bets[i] = pending.map(t => ({ target: t.target, amount: t.amount, hit: false }));
+  pending = null;
+  infoId = null;
+  S.cursor++;
+  S.phase = S.cursor >= S.order.length ? 'race' : 'handoff';
+}
+
+function answer(ans) {
+  undoStack.push(JSON.stringify(S));
+  const from = S.pos, to = nextOf(from, ans);
+  S.path.push({ from, to, ans });
+  S.pos = to;
+  infoId = null;
+  resolveHits(to);
+  if (isGoal(to)) S.phase = 'result';
+}
+
+function credit(i, amount) {
+  S.players[i].money += amount;
+  S.gains[i] += amount;
+}
+
+function resolveHits(id) {
+  const m = multOf(id);
+  if (!m) return;
+  const p = parentIdx();
+  for (const i of childIdxs()) {
+    for (const t of S.bets[i] || []) {
+      if (t.target !== id) continue;
+      t.hit = true;
+      credit(i, t.amount * m);
+      toast(`🎉 <b>${esc(S.players[i].name)}</b> が ${label(id)} 的中！ +${t.amount * m}`, 'hit');
+      for (const pt of S.bets[p] || []) {
+        if (pt.target === i && !pt.hit) {
+          pt.hit = true;
+          credit(p, pt.amount * PARENT_MULT);
+          toast(`👑 親の <b>${esc(S.players[p].name)}</b> も読み的中！ +${pt.amount * PARENT_MULT}`, 'hit');
+        }
+      }
+    }
+  }
+}
+
+function undo() {
+  if (!undoStack.length) return;
+  S = JSON.parse(undoStack.pop());
+  infoId = null;
+}
+
+function nextRound() {
+  S.round++;
+  if (S.round >= S.players.length) S.phase = 'final';
+  else beginRound();
+}
+
+// ===== 描画 =====
+function render() {
+  if (!S) renderSetup();
+  else renderGame();
+}
+
+function renderSetup() {
+  const pool = enabledPool();
+  const saved = store.get(LS_GAME);
+  const canResume = saved && saved.phase && saved.phase !== 'final';
+  const names = draftNames.map(s => s.trim()).filter(Boolean);
+  const dup = new Set(names).size !== names.length;
+  const problem = names.length < 3 ? 'プレイヤーは3人以上必要です'
+    : dup ? '同じ名前のプレイヤーがいます'
+    : pool.length < QIDS.length ? `質問が${QIDS.length}個以上必要です（今は${pool.length}個）` : null;
+
+  $('#app').innerHTML = `
+  <div class="setup">
+    <div class="logo">
+      <h1><span class="y">どっち</span><span class="n">ぼーい</span></h1>
+      <p>親はYES？NO？ 行き先を読んでBETしよう</p>
+    </div>
+    <section class="box">
+      <h2>プレイヤー <small>3〜6人・上から時計回りの順</small></h2>
+      ${draftNames.map((n, i) => `
+        <div class="player-row">
+          <span class="dot" style="background:${COLORS[i]}"></span>
+          <input type="text" maxlength="10" placeholder="プレイヤー${i + 1}" value="${esc(n)}" data-name="${i}" aria-label="プレイヤー${i + 1}の名前">
+          ${draftNames.length > 3 ? `<button class="icon-btn" data-act="del-player" data-i="${i}" aria-label="削除">×</button>` : ''}
+        </div>`).join('')}
+      ${draftNames.length < 6 ? `<button class="btn small" data-act="add-player">＋ プレイヤーを追加</button>` : ''}
+    </section>
+    <section class="box">
+      <h2>質問セット <button class="btn small" data-act="open-editor">編集する</button></h2>
+      ${sets.map(s => `
+        <div class="set-row">
+          <label><input type="checkbox" data-set="${esc(s.id)}" ${s.enabled ? 'checked' : ''}> ${esc(s.name)}</label>
+          <span class="count">${parseLines(s.questions.join('\n')).length}問</span>
+        </div>`).join('')}
+      <p class="note">選んだセットを混ぜて、毎ラウンド15問をランダムに並べます（使った質問はしばらく出ません）。</p>
+    </section>
+    <div class="setup-actions">
+      <button class="btn primary big block" data-act="start" ${problem ? 'disabled' : ''}>ゲームスタート</button>
+      <p class="warn" id="setup-problem" ${problem ? '' : 'hidden'}>${problem ? esc(problem) : ''}</p>
+      ${canResume ? `<button class="btn block" data-act="resume">前回の続きから（${saved.round + 1}ラウンド目）</button>` : ''}
+      <button class="btn ghost" data-act="rules">遊び方を見る</button>
+    </div>
+  </div>`;
+}
+
+function walletsHTML() {
+  const p = parentIdx();
+  const turn = S.phase === 'bet' || S.phase === 'handoff' ? bettor() : -1;
+  return `<div class="wallets">${S.players.map((pl, i) => `
+    <div class="wallet ${i === p ? 'parent' : ''} ${i === turn ? 'turn' : ''}" style="--c:${pl.color}">
+      <span class="av">${esc([...pl.name][0])}</span>${esc(pl.name)}
+      ${i === p && S.phase !== 'final' ? '<span class="tag">親</span>' : ''}
+      <span class="money">${pl.money.toLocaleString()}</span>
+    </div>`).join('')}</div>`;
+}
+
+function renderGame() {
+  const total = S.players.length;
+  const roundText = S.phase === 'final' ? '結果発表' : `ラウンド ${S.round + 1} / ${total}`;
+  $('#app').innerHTML = `
+    <header class="topbar">
+      <span class="mini-logo">どっちぼーい</span>
+      <span class="round">${roundText}</span>
+      <span class="spacer"></span>
+      <button class="btn small" data-act="rules">遊び方</button>
+      <button class="btn small" data-act="to-title">タイトルへ</button>
+    </header>
+    ${walletsHTML()}
+    <main class="game">
+      <div class="board-wrap">${boardHTML()}</div>
+      ${panelHTML()}
+    </main>`;
+  observeBoard();
+}
+
+function boardHTML() {
+  const showBets = ['race', 'result'].includes(S.phase);
+  const visited = new Map(S.path.map(p => [p.from, p.ans]));
+  const picks = S.phase === 'bet' && bettor() !== parentIdx() ? pending.map(t => t.target) : [];
+  const chipsFor = id => {
+    if (!showBets) return '';
+    const chips = [];
+    for (const i of childIdxs()) {
+      for (const t of S.bets[i] || []) {
+        if (t.target === id) chips.push(`<span class="chip ${t.hit ? 'hit' : ''}" style="--c:${S.players[i].color}" title="${esc(S.players[i].name)} ${t.amount}">${esc([...S.players[i].name][0])}</span>`);
+      }
+    }
+    return chips.length ? `<span class="chips">${chips.join('')}</span>` : '';
+  };
+  const cls = id => {
+    const c = [];
+    if (S.phase === 'bet' && bettor() !== parentIdx()) c.push(isBettable(id) ? 'selectable' : 'dim');
+    if (visited.has(id)) c.push('visited');
+    if (S.phase === 'race' && S.pos === id) c.push('current');
+    if (['result', 'final'].includes(S.phase) && S.pos === id) c.push('reached');
+    if (picks.includes(id)) c.push('pick');
+    if (infoId === id) c.push('info');
+    return c.join(' ');
+  };
+  const extras = id => {
+    let h = '';
+    const k = picks.indexOf(id);
+    if (k >= 0) h += `<span class="ticket-tag">券${k + 1}</span>`;
+    if (visited.has(id)) h += `<span class="stamp ${visited.get(id)}">${visited.get(id) === 'yes' ? 'YES' : 'NO'}</span>`;
+    if (S.pos === id && S.phase !== 'intro' && S.phase !== 'handoff' && S.phase !== 'bet') h += `<span class="koma">親</span>`;
+    return h + chipsFor(id);
+  };
+
+  let h = `<div class="board" id="board"><svg class="lines" id="lines" aria-hidden="true"></svg>`;
+  h += `<div class="start-tag" style="grid-column:1 / span 3;grid-row:1">START<small>全員に+${START_BONUS}</small></div>`;
+  QIDS.forEach((id, k) => {
+    const r = rowOf(id), c = +id[2], m = multOf(id);
+    h += `<button class="card q ${cls(id)}" data-act="card" data-id="${id}" style="grid-column:${4 - r + 2 * c + 1} / span 2;grid-row:${r + 1}">
+      <span class="cid">${label(id)}</span>${m ? `<span class="mult">×${m}</span>` : ''}
+      <span class="qt">${esc(S.board[k])}</span>${extras(id)}
+    </button>`;
+  });
+  for (let c = 1; c <= 5; c++) {
+    for (const yn of ['Y', 'N']) {
+      const id = yn + c;
+      h += `<button class="card goal ${yn} ${cls(id)}" data-act="card" data-id="${id}" style="grid-column:${(c - 1) * 2 + (yn === 'Y' ? 1 : 2)};grid-row:6">
+        <span class="gid">${label(id)}</span><span class="gm">×${multOf(id)}</span>${extras(id)}
+      </button>`;
+    }
+  }
+  return h + `</div>`;
+}
+
+function whoHTML(i) {
+  const pl = S.players[i];
+  return `<span class="who" style="--c:${pl.color}"><span class="av">${esc([...pl.name][0])}</span>${esc(pl.name)}</span>`;
+}
+
+function infoHTML() {
+  if (!infoId) return '';
+  const k = QIDS.indexOf(infoId);
+  const text = k >= 0 ? S.board[k] : `親が最後の質問に ${infoId[0] === 'Y' ? 'YES' : 'NO'} で着くマス`;
+  const m = multOf(infoId);
+  return `<div class="qbox small">
+    <div class="qid">${label(infoId)}${m ? `・${rowName(infoId)} ×${m}` : '・この段には賭けられません'}</div>
+    <div class="qtext">${esc(text)}</div>
+  </div>`;
+}
+
+function betsListHTML() {
+  return `<ul class="bets-list">${S.order.map(i => {
+    const tickets = (S.bets[i] || []).map(t => {
+      const what = i === parentIdx() ? `→${esc(S.players[t.target].name)}` : label(t.target);
+      return `<span class="tk ${t.hit ? 'hit' : ''}">${what} ${t.amount}${t.hit ? ' ✓' : ''}</span>`;
+    }).join('');
+    return `<li>${whoHTML(i)}${i === parentIdx() ? '<small>(親)</small>' : ''} ${tickets}</li>`;
+  }).join('')}</ul>`;
+}
+
+function panelHTML() {
+  const p = parentIdx();
+  switch (S.phase) {
+    case 'intro':
+      return `<aside class="panel">
+        <h3>ラウンド ${S.round + 1}</h3>
+        <p class="lead">親は ${whoHTML(p)} さん。全員に <b>${START_BONUS}ドッチ</b> が配られました！</p>
+        ${infoHTML()}
+        <div class="stack">
+          <p class="note" style="margin:0">子は親がどのマスを通るか、親はどの子が当てるかを予想します。まずは盤面の質問をながめてみよう。</p>
+          <button class="btn primary big block" data-act="to-handoff">予想タイムへ</button>
+          <button class="btn small" data-act="redraw">質問を引き直す</button>
+        </div>
+      </aside>`;
+
+    case 'handoff': {
+      const i = bettor();
+      return `<aside class="panel">
+        <h3>予想タイム（${S.cursor + 1} / ${S.order.length}）</h3>
+        <p class="lead">${whoHTML(i)} さんに端末を渡してね。<br>ほかの人は画面を見ないように！</p>
+        ${infoHTML()}
+        <button class="btn primary big block" data-act="to-bet">${esc(S.players[i].name)} です。予想する</button>
+      </aside>`;
+    }
+
+    case 'bet': {
+      const i = bettor(), isParent = i === p, me = S.players[i];
+      const problem = betProblem();
+      const sum = pending[0].amount + pending[1].amount;
+      const tickets = pending.map((t, k) => {
+        const other = pending[1 - k];
+        const target = isParent
+          ? `<div class="pick-list">${childIdxs().map(ci => `
+              <button class="${t.target === ci ? 'on' : ''}" data-act="ppick" data-k="${k}" data-i="${ci}" ${other.target === ci ? 'disabled' : ''} style="--c:${S.players[ci].color}">
+                <span class="av"></span>${esc(S.players[ci].name)}</button>`).join('')}</div>`
+          : t.target
+            ? `<div class="t-target">${label(t.target)}　${rowName(t.target)} ×${multOf(t.target)}</div>`
+            : `<div class="t-target empty">盤面のマスをタップして選ぶ</div>`;
+        return `<div class="ticket ${activeTicket === k ? 'active' : ''}" data-act="ticket" data-k="${k}">
+          <div class="t-head"><span>ドッチ券 ${k + 1}</span><span>${isParent ? `当たると ×${PARENT_MULT}` : t.target ? `当たると +${t.amount * multOf(t.target)}` : ''}</span></div>
+          ${target}
+          <div class="stepper">
+            <button data-act="amt" data-k="${k}" data-d="-50">−50</button>
+            <button data-act="amt" data-k="${k}" data-d="-10">−10</button>
+            <span class="amt">${t.amount}<small> ドッチ</small></span>
+            <button data-act="amt" data-k="${k}" data-d="10">＋10</button>
+            <button data-act="amt" data-k="${k}" data-d="50">＋50</button>
+            <button data-act="amt-max" data-k="${k}">MAX</button>
+          </div>
+        </div>`;
+      }).join('');
+      return `<aside class="panel">
+        <h3>${whoHTML(i)} の予想 ${isParent ? '<small>(親)</small>' : ''}</h3>
+        <p class="lead">${isParent
+          ? 'どの子が予想を当てるか、2人に賭けよう。当たれば掛け金の2倍！'
+          : '親が通りそうなマスを2つ選ぼう（3段目から下）。親コマがそのマスを踏めば 掛け金×倍率 がもらえる！'}</p>
+        ${infoHTML()}
+        <div class="tickets">${tickets}</div>
+        <div class="bet-sum"><span>掛け金 合計 ${sum}</span><span>残り ${me.money - sum} ドッチ</span></div>
+        ${problem ? `<p class="warn" style="margin:0 0 10px">${esc(problem)}</p>` : ''}
+        <button class="btn primary big block" data-act="confirm-bet" ${problem ? 'disabled' : ''}>この予想で決定</button>
+      </aside>`;
+    }
+
+    case 'race': {
+      const k = QIDS.indexOf(S.pos);
+      return `<aside class="panel race">
+        <h3>出走！ ${whoHTML(p)} は正直に答えてね</h3>
+        <div class="progress">${[0, 1, 2, 3, 4].map(r => `<span class="${r < S.path.length ? 'done' : ''}"></span>`).join('')}</div>
+        <div class="qbox">
+          <div class="qid">${label(S.pos)}${multOf(S.pos) ? `・${rowName(S.pos)}` : ''}</div>
+          <div class="qtext">${esc(S.board[k])}</div>
+        </div>
+        <div class="yn">
+          <button class="btn yes" data-act="answer" data-ans="yes">YES</button>
+          <button class="btn no" data-act="answer" data-ans="no">NO</button>
+        </div>
+        ${undoStack.length ? `<button class="btn ghost" data-act="undo" style="margin-top:6px">↩ 1つ戻す</button>` : ''}
+        ${infoHTML()}
+        <details class="more"><summary>みんなの予想</summary>${betsListHTML()}</details>
+      </aside>`;
+    }
+
+    case 'result': {
+      const yn = S.pos[0];
+      const last = S.round + 1 >= S.players.length;
+      return `<aside class="panel">
+        <div class="goal-banner ${yn}">ゴール！<span class="big">${label(S.pos)} ×${multOf(S.pos)}</span>${whoHTML(p)} の最後の答えは ${yn === 'Y' ? 'YES' : 'NO'}</div>
+        <table class="table">
+          <thead><tr><th>プレイヤー</th><th class="num">獲得</th><th class="num">所持金</th></tr></thead>
+          <tbody>${S.players.map((pl, i) => `<tr>
+            <td>${whoHTML(i)}${i === p ? ' <small>(親)</small>' : ''}</td>
+            <td class="num ${S.gains[i] ? 'plus' : ''}">${S.gains[i] ? '+' + S.gains[i] : '0'}</td>
+            <td class="num">${pl.money.toLocaleString()}</td></tr>`).join('')}</tbody>
+        </table>
+        <details class="more" open><summary>みんなの予想</summary>${betsListHTML()}</details>
+        <div class="stack" style="margin-top:14px">
+          <button class="btn primary big block" data-act="next-round">${last ? '最終結果へ' : `次のラウンドへ（親：${esc(S.players[(p + 1) % S.players.length].name)}）`}</button>
+          ${undoStack.length ? `<button class="btn ghost" data-act="undo">↩ 最後の答えを取り消す</button>` : ''}
+        </div>
+      </aside>`;
+    }
+
+    case 'final': {
+      const ranked = S.players.map((pl, i) => ({ pl, i })).sort((a, b) => b.pl.money - a.pl.money);
+      const medals = ['🥇', '🥈', '🥉'];
+      let rank = 0;
+      return `<aside class="panel">
+        <h3>結果発表</h3>
+        <p class="lead">いちばんドッチを持っている人の勝ち！</p>
+        <table class="table"><tbody>${ranked.map((r, n) => {
+          if (n === 0 || r.pl.money !== ranked[n - 1].pl.money) rank = n;
+          return `<tr><td class="rank">${medals[rank] || rank + 1}</td><td>${whoHTML(r.i)}</td><td class="num"><b>${r.pl.money.toLocaleString()}</b> ドッチ</td></tr>`;
+        }).join('')}</tbody></table>
+        <div class="stack">
+          <button class="btn primary big block" data-act="again">同じメンバーでもう一度</button>
+          <button class="btn block" data-act="to-title">タイトルへ</button>
+        </div>
+      </aside>`;
+    }
+  }
+  return '';
+}
+
+// ===== 盤面の線 =====
+let boardObserver = null;
+function observeBoard() {
+  if (boardObserver) boardObserver.disconnect();
+  const board = $('#board');
+  if (!board) return;
+  boardObserver = new ResizeObserver(drawLines);
+  boardObserver.observe(board);
+  drawLines();
+}
+
+function drawLines() {
+  const board = $('#board'), svg = $('#lines');
+  if (!board || !svg) return;
+  const b = board.getBoundingClientRect();
+  const box = id => {
+    const r = board.querySelector(`[data-id="${id}"]`).getBoundingClientRect();
+    return { x: r.left - b.left, y: r.top - b.top, w: r.width, h: r.height };
+  };
+  const taken = new Map(S.path.map(p => [p.from, p.ans]));
+  const base = [], onPath = []; // 通った道は後から描いて上に重ねる
+  for (const id of QIDS) {
+    const a = box(id);
+    for (const ans of ['yes', 'no']) {
+      const t = box(nextOf(id, ans));
+      const x1 = a.x + a.w * (ans === 'yes' ? .3 : .7), y1 = a.y + a.h;
+      const x2 = t.x + t.w / 2, y2 = t.y;
+      const on = taken.get(id) === ans;
+      (on ? onPath : base).push(`<line class="ln ${ans} ${on ? 'on' : ''}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`);
+    }
+  }
+  svg.setAttribute('viewBox', `0 0 ${b.width} ${b.height}`);
+  svg.innerHTML = base.join('') + onPath.join('');
+}
+
+// ===== トースト・モーダル =====
+function toast(html, kind = '') {
+  const el = document.createElement('div');
+  el.className = `toast ${kind}`;
+  el.innerHTML = html;
+  $('#toasts').append(el);
+  setTimeout(() => el.classList.add('out'), 2600);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function openModal(html) {
+  $('#modal-root').innerHTML = `<div class="modal-bg" data-act="modal-bg"><div class="modal" role="dialog" aria-modal="true">${html}</div></div>`;
+}
+function closeModal() {
+  $('#modal-root').innerHTML = '';
+  if (!S) render();
+}
+function askConfirm(text, okLabel, onOk) {
+  confirmAction = onOk;
+  openModal(`<h2>確認</h2><p>${text}</p>
+    <div class="modal-actions"><button class="btn" data-act="close-modal">やめる</button><button class="btn primary" data-act="confirm-ok">${okLabel}</button></div>`);
+}
+
+function openRules() {
+  openModal(`<h2>遊び方</h2>
+    <p>親がYES/NOの質問に答えながらピラミッドを下りていきます。<b>親がどのマスを通るか</b>を読んでドッチを賭け、最後にいちばん多く持っていた人の勝ち！</p>
+    <h4>1ラウンドの流れ</h4>
+    <ol>
+      <li><b>スタート</b>：全員に${START_BONUS}ドッチが配られます。</li>
+      <li><b>予想タイム</b>：親の左隣から順に、端末を回してこっそり予想します。
+        <ul>
+          <li><b>子</b>：親が通りそうなマスを2つ選び、それぞれに賭けます（3段目から下のマスだけ）。</li>
+          <li><b>親</b>：予想を当てそうな子を2人選んで賭けます。当たれば掛け金の${PARENT_MULT}倍。</li>
+          <li>2枚の券で同じ対象には賭けられません。掛け金は${MIN_BET}ドッチ以上です。</li>
+        </ul>
+      </li>
+      <li><b>出走</b>：親は質問に正直に答えます。<b>YESなら左下、NOなら右下</b>へ進みます。</li>
+      <li><b>当たり</b>：予想したマスを親コマが踏んだ瞬間に、掛け金 × マスの倍率 がもらえます。その子に賭けていた親も当たりです。</li>
+      <li>ソウルメイトの段に着いたらラウンド終了。親は左隣の人に交代します。</li>
+    </ol>
+    <h4>マスの倍率</h4>
+    <ul>
+      <li>知人の段（3段目）×2 ／ 友達の段（4段目）×3 ／ 親友の段（5段目）×4</li>
+      <li>ソウルメイトの段：端から ×16・×12・×8・×12・×16</li>
+    </ul>
+    <h4>ゲーム終了</h4>
+    <p>全員が1回ずつ親をやったら終了。所持金がいちばん多い人の勝ちです。</p>
+    <div class="modal-actions"><button class="btn primary" data-act="close-modal">とじる</button></div>`);
+}
+
+// ===== 質問エディタ =====
+function openEditor(id) {
+  editorSetId = id || editorSetId || sets[0].id;
+  const set = sets.find(s => s.id === editorSetId) || sets[0];
+  editorSetId = set.id;
+  openModal(`<h2>質問セットの編集</h2>
+    <div class="tabs">${sets.map(s => `<button class="${s.id === set.id ? 'on' : ''}" data-act="ed-tab" data-id="${esc(s.id)}">${esc(s.name)}</button>`).join('')}
+      <button data-act="ed-new">＋ 新しいセット</button></div>
+    ${set.builtin ? '' : `<input class="ed-name" id="ed-name" value="${esc(set.name)}" maxlength="20" aria-label="セット名">`}
+    <textarea class="ed-text" id="ed-text" spellcheck="false" aria-label="質問（1行に1問）">${esc(set.questions.join('\n'))}</textarea>
+    <p class="note">1行に1問。YES/NOで答えられる質問にしてね。変更は自動で保存されます。<span id="ed-count"></span></p>
+    <div class="ed-tools">
+      <label class="btn small file-btn">txtから読み込む<input type="file" accept=".txt,text/plain" id="ed-file"></label>
+      <button class="btn small" data-act="ed-export">txtで書き出す</button>
+      ${set.builtin ? `<button class="btn small" data-act="ed-reset">初期状態に戻す</button>` : `<button class="btn small" data-act="ed-delete">このセットを削除</button>`}
+    </div>
+    <div class="modal-actions"><button class="btn primary" data-act="close-modal">完了</button></div>`);
+  updateEditorCount();
+}
+function updateEditorCount() {
+  const set = sets.find(s => s.id === editorSetId);
+  const el = $('#ed-count');
+  if (set && el) el.textContent = `（${set.questions.length}問）`;
+}
+
+// ===== イベント =====
+const actions = {
+  'add-player'() { if (draftNames.length < 6) { draftNames.push(''); store.set(LS_NAMES, draftNames); render(); } },
+  'del-player'(el) { draftNames.splice(+el.dataset.i, 1); store.set(LS_NAMES, draftNames); render(); },
+  start() {
+    const names = draftNames.map(s => s.trim()).filter(Boolean);
+    newGame(names, shuffle(enabledPool()));
+    store.set(LS_NAMES, draftNames);
+  },
+  resume() {
+    S = store.get(LS_GAME);
+    if (S && S.phase === 'bet') S.phase = 'handoff'; // 入力途中の券は保存していない
+    undoStack = [];
+  },
+  rules() { openRules(); return false; },
+  'open-editor'() { openEditor(); return false; },
+  'to-title'() { S = null; pending = null; undoStack = []; },
+  again() {
+    const names = S.players.map(p => p.name), pool = S.pool;
+    newGame(names, pool);
+  },
+  'to-handoff'() { S.phase = 'handoff'; infoId = null; },
+  redraw() { drawBoard(); infoId = null; },
+  'to-bet'() { startBetting(); },
+  card(el) {
+    const id = el.dataset.id;
+    if (S.phase === 'bet' && bettor() !== parentIdx()) {
+      if (!isBettable(id)) { infoId = id; toast('1・2段目には賭けられません'); return; }
+      const other = pending[1 - activeTicket];
+      if (other.target === id) { toast('2枚とも同じマスには賭けられません'); return; }
+      pending[activeTicket].target = id;
+      infoId = id;
+      if (other.target === null) activeTicket = 1 - activeTicket;
+      return;
+    }
+    infoId = infoId === id ? null : id;
+  },
+  ticket(el) { activeTicket = +el.dataset.k; },
+  ppick(el) {
+    const k = +el.dataset.k;
+    pending[k].target = +el.dataset.i;
+    activeTicket = k;
+    if (pending[1 - k].target === null) activeTicket = 1 - k;
+  },
+  amt(el) {
+    const k = +el.dataset.k, t = pending[k];
+    const max = S.players[bettor()].money - pending[1 - k].amount;
+    t.amount = Math.max(MIN_BET, Math.min(max, t.amount + +el.dataset.d));
+    activeTicket = k;
+  },
+  'amt-max'(el) {
+    const k = +el.dataset.k;
+    pending[k].amount = Math.max(MIN_BET, S.players[bettor()].money - pending[1 - k].amount);
+    activeTicket = k;
+  },
+  'confirm-bet'() { confirmBet(); },
+  answer(el) { answer(el.dataset.ans); },
+  undo() { undo(); },
+  'next-round'() { nextRound(); },
+  'close-modal'() { closeModal(); return false; },
+  'modal-bg'(el, e) { if (e.target === el) closeModal(); return false; },
+  'confirm-ok'() { const fn = confirmAction; confirmAction = null; closeModal(); if (fn) fn(); return false; },
+  'ed-tab'(el) { openEditor(el.dataset.id); return false; },
+  'ed-new'() {
+    const set = { id: 'c' + Date.now(), name: '新しいセット', builtin: false, questions: [], enabled: false };
+    sets.push(set); saveSets(); openEditor(set.id); return false;
+  },
+  'ed-export'() {
+    const set = sets.find(s => s.id === editorSetId);
+    const url = URL.createObjectURL(new Blob([set.questions.join('\n') + '\n'], { type: 'text/plain' }));
+    const a = Object.assign(document.createElement('a'), { href: url, download: `${set.name}.txt` });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return false;
+  },
+  'ed-reset'() {
+    const set = sets.find(s => s.id === editorSetId);
+    askConfirm(`「${esc(set.name)}」を最初の質問に戻します。`, '戻す', () => {
+      set.questions = [...DEFAULT_SETS.find(d => d.id === set.id).questions];
+      saveSets(); openEditor(set.id);
+    });
+    return false;
+  },
+  'ed-delete'() {
+    const set = sets.find(s => s.id === editorSetId);
+    askConfirm(`「${esc(set.name)}」を削除します。`, '削除する', () => {
+      sets = sets.filter(s => s.id !== set.id);
+      saveSets(); editorSetId = sets[0].id; openEditor();
+    });
+    return false;
+  },
+};
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el || el.disabled) return;
+  const fn = actions[el.dataset.act];
+  if (!fn) return;
+  if (fn(el, e) === false) return; // モーダル系は画面を描き直さない
+  saveGame();
+  render();
+});
+
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.dataset.name !== undefined) {
+    draftNames[+t.dataset.name] = t.value;
+    store.set(LS_NAMES, draftNames);
+    // 入力欄のフォーカスを保つため、スタートボタンと警告だけ更新する
+    const names = draftNames.map(s => s.trim()).filter(Boolean);
+    const pool = enabledPool();
+    const problem = names.length < 3 ? 'プレイヤーは3人以上必要です'
+      : new Set(names).size !== names.length ? '同じ名前のプレイヤーがいます'
+      : pool.length < QIDS.length ? `質問が${QIDS.length}個以上必要です（今は${pool.length}個）` : null;
+    $('[data-act="start"]').disabled = !!problem;
+    const warn = $('#setup-problem');
+    warn.hidden = !problem;
+    warn.textContent = problem || '';
+  } else if (t.id === 'ed-text') {
+    const set = sets.find(s => s.id === editorSetId);
+    set.questions = parseLines(t.value);
+    saveSets(); updateEditorCount();
+  } else if (t.id === 'ed-name') {
+    const set = sets.find(s => s.id === editorSetId);
+    set.name = t.value.trim() || '名前なし';
+    saveSets();
+  }
+});
+
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.set !== undefined) {
+    const set = sets.find(s => s.id === t.dataset.set);
+    set.enabled = t.checked;
+    saveSets(); render();
+  } else if (t.id === 'ed-file' && t.files[0]) {
+    const file = t.files[0];
+    file.text().then(text => {
+      const set = { id: 'c' + Date.now(), name: file.name.replace(/\.[^.]+$/, '').slice(0, 20) || '読み込んだ質問', builtin: false, questions: parseLines(text), enabled: true };
+      sets.push(set); saveSets(); openEditor(set.id);
+      toast(`「${esc(set.name)}」を${set.questions.length}問で追加しました`);
+    });
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && $('#modal-root').innerHTML) closeModal();
+});
+
+render();
+</script>
+</body>
+</html>
